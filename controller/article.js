@@ -37,4 +37,4 @@ module.exports = {
             res.render('./article/info.html',renderObj)
         })
     },
-}
+};
