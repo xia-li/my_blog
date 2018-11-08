@@ -3,7 +3,7 @@
     <h1 class="text-center">
         编辑文章页
         {{if user && user.id==article. author_id}}
-        <a href="javascript:;" class="btn btn-primary pull-right">编辑</a>
+        <a href="/article/edit/{{article.id}}" class="btn btn-primary pull-right">编辑</a>
         {{/if}}
     </h1>
     <hr>
