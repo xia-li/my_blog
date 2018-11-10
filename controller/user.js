@@ -1,5 +1,6 @@
 const moment = require('moment');
 const connection = require('../db/index.js');
+const bcyrpt = require('bcrypt');
 module.exports = {
     handleLoginGet(req, res) {
         res.render('./user/login.html', {});
@@ -20,26 +21,37 @@ module.exports = {
         if (err) return res.status(500).send({status: 500, msg: '用户名查询失败!请重试!'});
         // console.log(result[0].count != 0)
         if (result[0].count !== 0) return res.status(402).send({status: 402, msg: '用户名已存在!请重试!'});
-        // 用户名不存在需要执行添加用户的sql语句
-        const Sql1 = 'insert into users set ?';
-        connection.query(Sql1, user, (err, result) => {
-            if (err || result.affectedRows !== 1) return res.status(500).send({status: 500, msg: '用户添加失败!请重试!'});
-            res.send({status: 200, msg: '用户注册成功!'});
+        //进行明文加密
+        const saltRounds = 10;
+        bcyrpt.hash(user.password,saltRounds,(err,hash)=>{
+            user.password = hash;
+            // 用户名不存在需要执行添加用户的sql语句
+            const Sql1 = 'insert into users set ?';
+            connection.query(Sql1, user, (err, result) => {
+                if (err || result.affectedRows !== 1) return res.status(500).send({status: 500, msg: '用户添加失败!请重试!'});
+                res.send({status: 200, msg: '用户注册成功!'});
+            })
         })
+
     })
 },
     handleLoginPost(req, res) {
     const user = req.body;
-    const sql = 'select * from users where username = ? and password = ?';
-    connection.query(sql, [user.username, user.password], (err, result) => {
+    const sql = 'select * from users where username = ?';
+    connection.query(sql, user.username, (err, result) => {
         if (err) return res.status(500).send({status: 500, msg: '登录失败!请重试!'});
         if (result.length === 0) return res.status(400).send({status: 400, msg: '用户名或密码错误!请重试!'});
-        //储存登陆信息并且设置储存时间
-        let hour = 1000*60*60*24*30;
-        req.session.cookie.expires = new Date(Date.now() + hour);
-        req.session.user = result[0];
-        req.session.isLogin = true;
-        res.send({status: 200, msg: '恭喜您!登录成功!'})
+        /** @namespace err.compareResult */
+        bcyrpt.compare(user.password,result[0].password,(err,compareResult)=>{
+            if (err || !compareResult) return res.status(400).send({ status: 400, msg: '用户名或密码错误!请重试!' });
+            //储存登陆信息并且设置储存时间
+            let hour = 1000*60*60*24*30;
+            req.session.cookie.expires = new Date(Date.now() + hour);
+            req.session.user = result[0];
+            req.session.isLogin = true;
+            res.send({status: 200, msg: '恭喜您!登录成功!'})
+        })
+
     })
 },
     handleLogoutGet(req,res) {

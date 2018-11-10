@@ -11,5 +11,5 @@ router.post('/register',crl.handleRegisterPost );
 //登陆页面的业务逻辑
 router.post('/login', crl.handleLoginPost);
 //注销登录的逻辑
-router.get('/logout',crl.handleLogoutGet)
+router.get('/logout',crl.handleLogoutGet);
 module.exports = router;
